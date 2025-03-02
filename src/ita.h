@@ -9,7 +9,7 @@ typedef struct {
   unsigned char *data;
 } BMPImg;
 
-BMPImg loadBMP(const char *fileName);
+BMPImg *loadBMP(const char *fileName);
 int getBlockBrightness(BMPImg *img, int startX, int startY, int blockWidth, int blockHeight);
 char brightnessToASCII(int brightness);
 void renderASCII(BMPImg *img, int asciiWidth, int asciiHeight);

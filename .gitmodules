@@ -1,0 +1,3 @@
+[submodule "vendor/libjpeg"]
+	path = vendor/libjpeg
+	url = https://github.com/winlibs/libjpeg

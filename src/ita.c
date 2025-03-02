@@ -3,27 +3,27 @@
 #include <string.h>
 #include <stdio.h>
 
-BMPImg loadBMP(const char *fileName) {
-  BMPImg img;
+BMPImg *loadBMP(const char *fileName) {
   FILE *file = fopen(fileName, "rb");
   if (!file) {
     perror("Error opening file");
     exit(EXIT_FAILURE);
   }
 
-  fread(img.header, 1, 54, file);
+  BMPImg *img = malloc(54 + sizeof(*file));
+  fread(img->header, 1, 54, file);
 
-  img.width = (img.header[18]) | (img.header[19] << 8) |
-              (img.header[20] << 16) | (img.header[21] << 24);
-  img.height = (img.header[22]) | (img.header[23] << 8) |
-               (img.header[24] << 16) | (img.header[25] << 24);
+  img->width = (img->header[18]) | (img->header[19] << 8) |
+              (img->header[20] << 16) | (img->header[21] << 24);
+  img->height = ((img->header[22]) | (img->header[23] << 8) |
+               (img->header[24] << 16) | (img->header[25] << 24));
 
-  fprintf(stdout, "Image dimensions: %d x %d\n", img.width, img.height);
+  fprintf(stdout, "Image dimensions: %d x %d\n", img->width, img->height);
 
-  int dataSize = img.width * img.height * 3;
-  img.data = (unsigned char *)malloc(dataSize);
+  int dataSize = img->width * img->height * 3;
+  img->data = (unsigned char *)malloc(dataSize);
   fseek(file, 54, SEEK_SET);
-  fread(img.data, 1, dataSize, file);
+  fread(img->data, 1, dataSize, file);
   fclose(file);
 
   return img;
@@ -46,6 +46,7 @@ int getBlockBrightness(BMPImg *img, int startX, int startY, int blockWidth,
       ++count;
     }
   }
+  if (count == 0) return 0;
   return totalBrightness / count;
 }
 

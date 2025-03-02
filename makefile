@@ -1,7 +1,7 @@
 PROGRAM = facetime
-
-CC := gcc
-CFLAGS := -Wall -Wextra -Iinclude -Ivendor
+CC := clang
+CFLAGS := -Wall -Wextra -Iinclude -g
+LDFLAGS := -Llib -ljpeg
 SRC := $(wildcard src/*.c)
 OBJ := $(patsubst src/%.c, build/%.o, $(SRC))
 BIN := bin/$(PROGRAM)
@@ -9,7 +9,7 @@ BIN := bin/$(PROGRAM)
 all: $(BIN) compile_commands.json
 
 $(BIN): $(OBJ) | bin
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 build/%.o: src/%.c | build
 	$(CC) $(CFLAGS) -c $< -o $@

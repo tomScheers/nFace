@@ -1,7 +1,7 @@
 [
   {
     "arguments": [
-      "/usr/bin/clang",
+      "/usr/bin/gcc",
       "-Wall",
       "-Wextra",
       "-Iinclude",
@@ -17,23 +17,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/clang",
-      "-Wall",
-      "-Wextra",
-      "-Iinclude",
-      "-g",
-      "-c",
-      "-o",
-      "build/convert_bmp.o",
-      "src/convert_bmp.c"
-    ],
-    "directory": "/home/tom/Programming/C/Facetime",
-    "file": "/home/tom/Programming/C/Facetime/src/convert_bmp.c",
-    "output": "/home/tom/Programming/C/Facetime/build/convert_bmp.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
+      "/usr/bin/gcc",
       "-Wall",
       "-Wextra",
       "-Iinclude",
@@ -49,7 +33,7 @@
   },
   {
     "arguments": [
-      "/usr/bin/clang",
+      "/usr/bin/gcc",
       "-Wall",
       "-Wextra",
       "-Iinclude",
@@ -62,5 +46,21 @@
     "directory": "/home/tom/Programming/C/Facetime",
     "file": "/home/tom/Programming/C/Facetime/src/main.c",
     "output": "/home/tom/Programming/C/Facetime/build/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "build/ui.o",
+      "src/ui.c"
+    ],
+    "directory": "/home/tom/Programming/C/Facetime",
+    "file": "/home/tom/Programming/C/Facetime/src/ui.c",
+    "output": "/home/tom/Programming/C/Facetime/build/ui.o"
   }
 ]

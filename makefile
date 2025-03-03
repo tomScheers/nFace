@@ -1,7 +1,7 @@
 PROGRAM = facetime
-CC := clang
+CC := gcc
 CFLAGS := -Wall -Wextra -Iinclude -g
-LDFLAGS := -Llib -ljpeg -lturbojpeg
+LDFLAGS := -Llib -ljpeg -lturbojpeg -lncurses
 SRC := $(wildcard src/*.c)
 OBJ := $(patsubst src/%.c, build/%.o, $(SRC))
 BIN := bin/$(PROGRAM)

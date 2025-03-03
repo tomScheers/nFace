@@ -110,14 +110,6 @@ void captureFrame(size_t img_width, size_t img_height) {
     exit(1);
   }
 
-  if (buf.bytesused < img_width * img_height * 2) {
-    fprintf(stderr, "Warning: Incomplete frame, received %d bytes\n", buf.bytesused);
-  }
-
-  for (int i = 0; i < 16; i++) {
-    fprintf(stdout, "%02X ", ((unsigned char*)buffer)[i]);
-  }
-  fprintf(stdout, "%c", '\n');
 
   unsigned char *yuyv = buffer;
 

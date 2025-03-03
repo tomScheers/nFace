@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ncurses.h>
 
 BMPImg *loadBMP(const char *fileName) {
   FILE *file = fopen(fileName, "rb");
@@ -17,8 +18,6 @@ BMPImg *loadBMP(const char *fileName) {
               (img->header[20] << 16) | (img->header[21] << 24);
   img->height = ((img->header[22]) | (img->header[23] << 8) |
                (img->header[24] << 16) | (img->header[25] << 24));
-
-  fprintf(stdout, "Image dimensions: %d x %d\n", img->width, img->height);
 
   int dataSize = img->width * img->height * 3;
   img->data = (unsigned char *)malloc(dataSize);
@@ -56,15 +55,19 @@ char brightnessToASCII(int brightness) {
   return asciiChars[9 - index];
 }
 
-void renderASCII(BMPImg *img, int ASCIIWidth, int ASCIIHeight) {
+void renderASCII(WINDOW* win, BMPImg *img, int ASCIIWidth, int ASCIIHeight) {
   int blockWidth = img->width / ASCIIWidth;
   int blockHeight = img->height / ASCIIHeight;
-  for (int y = ASCIIHeight; y >= 0; --y) {
+
+  // Iterate from top to bottom and left to right
+  for (int y = 0; y < ASCIIHeight; ++y) {
     for (int x = 0; x < ASCIIWidth; ++x) {
+      // Calculate brightness for the block
       int brightness = getBlockBrightness(img, blockWidth * x, blockHeight * y,
                                           blockWidth, blockHeight);
-      fprintf(stdout, "%c", brightnessToASCII(brightness));
+
+      // Print the corresponding ASCII character at (y, x)
+      mvwprintw(win, ASCIIHeight - y, x, "%c", brightnessToASCII(brightness));
     }
-    fprintf(stdout, "\n");
   }
 }

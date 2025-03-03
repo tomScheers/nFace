@@ -1,0 +1,66 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "build/camera.o",
+      "src/camera.c"
+    ],
+    "directory": "/home/tom/Programming/C/Facetime",
+    "file": "/home/tom/Programming/C/Facetime/src/camera.c",
+    "output": "/home/tom/Programming/C/Facetime/build/camera.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "build/convert_bmp.o",
+      "src/convert_bmp.c"
+    ],
+    "directory": "/home/tom/Programming/C/Facetime",
+    "file": "/home/tom/Programming/C/Facetime/src/convert_bmp.c",
+    "output": "/home/tom/Programming/C/Facetime/build/convert_bmp.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "build/ita.o",
+      "src/ita.c"
+    ],
+    "directory": "/home/tom/Programming/C/Facetime",
+    "file": "/home/tom/Programming/C/Facetime/src/ita.c",
+    "output": "/home/tom/Programming/C/Facetime/build/ita.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "build/main.o",
+      "src/main.c"
+    ],
+    "directory": "/home/tom/Programming/C/Facetime",
+    "file": "/home/tom/Programming/C/Facetime/src/main.c",
+    "output": "/home/tom/Programming/C/Facetime/build/main.o"
+  }
+]

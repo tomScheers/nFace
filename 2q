@@ -1,4 +1,5 @@
 #include "ita.h"
+#include <math.h>
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,31 +40,34 @@ char brightnessToASCII(int brightness) {
   return asciiChars[9 - index];
 }
 
-int getClosestColor(int r, int g, int b) {
-    const struct RGB ncursesColors[] = {
-        {255, 0, 0},     // COLOR_RED
-        {0, 255, 0},     // COLOR_GREEN
-        {0, 0, 255},     // COLOR_BLUE
-        {255, 255, 0},   // COLOR_YELLOW
-        {255, 0, 255},   // COLOR_MAGENTA
-        {255, 255, 255}, // COLOR_WHITE
-        {0, 0, 0},       // COLOR_BLACK
-    };
+int getClosestColor(int r, int b, int g) {
+  const struct RGB ncursesColors[] = {
+      {0, 0, 0},       // COLOR_BLACK
+      {255, 0, 0},     // COLOR_RED
+      {0, 255, 0},     // COLOR_GREEN
+      {255, 255, 0},   // COLOR_YELLOW
+      {0, 0, 255},     // COLOR_BLUE
+      {255, 0, 255},   // COLOR_MAGENTA
+      {0, 255, 255},   // COLOR_CYAN
+      {255, 255, 255}, // COLOR_WHITE
+  };
 
-    const int NCURSES_COLOR_COUNT = sizeof(ncursesColors) / sizeof(ncursesColors[0]);
-    int colorReturn = 0;
-    int smallestDistanceSquared = 1000 * 1000; // a value bigger than any possible squared distance
-    for (int i = 0; i < NCURSES_COLOR_COUNT; i++) {
-        int dr = r - ncursesColors[i].r;
-        int dg = g - ncursesColors[i].g;
-        int db = b - ncursesColors[i].b;
-        int distanceSquared = dr * dr + dg * dg + db * db;
-        if (distanceSquared < smallestDistanceSquared) {
-            smallestDistanceSquared = distanceSquared;
-            colorReturn = i;
-        }
+  const int NCURSES_COLOR_COUNT = sizeof(ncursesColors) / sizeof(ncursesColors[0]);
+
+  int closestColor = 0;
+  int minDist = INFINITY;
+  for (int i = 0; i < NCURSES_COLOR_COUNT; ++i) {
+    int dr = r - ncursesColors[i].r;
+    int dg = g - ncursesColors[i].g;
+    int db = b - ncursesColors[i].b;
+    int distance = dr * dr + dg * dg + db * db;
+
+    if (distance < minDist) {
+      minDist = distance;
+      closestColor = i;
     }
-    return colorReturn;
+  }
+  return closestColor - 1;
 }
 
 void renderASCII(WINDOW *win, BMPImg *img, int ASCIIWidth, int ASCIIHeight) {
@@ -77,18 +81,20 @@ void renderASCII(WINDOW *win, BMPImg *img, int ASCIIWidth, int ASCIIHeight) {
 
   for (int y = 0; y < ASCIIHeight; ++y) {
     for (int x = 0; x < ASCIIWidth; ++x) {
-      struct RGB color;
+      struct RGB *color = malloc(sizeof(struct RGB));
       int brightness = getBlockBrightness(img, blockWidth * x, blockHeight * y,
-                                          blockWidth, blockHeight, &color);
+                                          blockWidth, blockHeight, color);
 
-      //int closestColor = getClosestColor(color.r, color.g, color.b);
-      //wattron(win, COLOR_PAIR(closestColor));
+      int closestColor = getClosestColor(color->r, color->g, color->b);
+      wattron(win, COLOR_PAIR(closestColor));
 
       // Corrected indexing
       mvwprintw(win, ASCIIHeight - y, ASCIIWidth - x, "%c",
                 brightnessToASCII(brightness));
 
-//wattroff(win, COLOR_PAIR(closestColor));
+      wattroff(win, COLOR_PAIR(closestColor));
+
+      free(color);
     }
   }
 }

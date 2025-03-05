@@ -1,10 +1,12 @@
 #include "camera.h"
+#include "ita.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/videodev2.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -17,115 +19,131 @@ static int xioctl(int fh, int request, void *arg) {
   return r;
 }
 
-void captureFrame(size_t img_width, size_t img_height) {
-  int fd = open("/dev/video0", O_RDWR); // Opening camera
+static int openCamera() {
+  return open("/dev/video0", O_RDWR);
+}
 
-  // Setting format
-  struct v4l2_format fmt = {0};
-  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+static int setFormat(int *cameraFd, size_t imageWidth, size_t imageHeight, struct v4l2_format *p_fmt) {
+  //struct v4l2_format fmt = *p_fmt;
+  p_fmt->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  p_fmt->fmt.pix.height = imageHeight;
+  p_fmt->fmt.pix.width = imageWidth;
+  p_fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+  p_fmt->fmt.pix.field = V4L2_FIELD_NONE;
+  return xioctl(*cameraFd, VIDIOC_S_FMT, p_fmt);
+}
 
-  // Image dimensions
-  fmt.fmt.pix.width = img_width;
-  fmt.fmt.pix.height = img_height;
-
-  fmt.fmt.pix.pixelformat =
-      V4L2_PIX_FMT_YUYV; // Image format, for this program it uses jpeg
-  fmt.fmt.pix.field = V4L2_FIELD_NONE;
-  if (xioctl(fd, VIDIOC_S_FMT, &fmt) == -1) {
-    perror("setting fmt");
-    close(fd);
-    exit(1);
-  }
-
-  // Requesting buffer
+static int requestBuffer(int *cameraFd) {
   struct v4l2_requestbuffers req = {0};
-  req.count = 1; // Request 1 frame
+  req.count = 1;
   req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   req.memory = V4L2_MEMORY_MMAP;
-  if (xioctl(fd, VIDIOC_REQBUFS, &req) == -1) {
-    perror("requesting buffer");
-    close(fd);
-    exit(1);
-  }
+  return xioctl(*cameraFd, VIDIOC_REQBUFS, &req);
+}
 
-  // Get information about the device
+static int queueBuffer(int *cameraFd) {
   struct v4l2_buffer buf = {0};
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   buf.memory = V4L2_MEMORY_MMAP;
   buf.index = 0;
+  return xioctl(*cameraFd, VIDIOC_QBUF, &buf);
+}
 
-  if (xioctl(fd, VIDIOC_QUERYBUF, &buf) == -1) {
-    perror("querying buffer");
-    close(fd);
-    exit(1);
-  }
-
-  void *buffer = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
-                      buf.m.offset);
-  if (buffer == MAP_FAILED) {
-    perror("mapping memory");
-    close(fd);
-    exit(1);
-  }
-
-  // Queue buffer first
-  struct v4l2_buffer bufd = {0};
-  bufd.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  bufd.memory = V4L2_MEMORY_MMAP;
-  bufd.index = 0;
-  if (xioctl(fd, VIDIOC_QBUF, &bufd) == -1) {
-    perror("Queueing Buffer");
-    munmap(buffer, buf.length);
-    close(fd);
-    exit(1);
-  }
-
-  // Start streaming
-  unsigned int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+static int startStream(int *cameraFd) {
+  unsigned int streamType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   fflush(stdout);
-  if (xioctl(fd, VIDIOC_STREAMON, &type) == -1) {
-    perror("VIDIOC_STREAMON");
-    munmap(buffer, buf.length);
-    close(fd);
-    exit(1);
-  }
+  return xioctl(*cameraFd, VIDIOC_STREAMON, &streamType);
+}
 
+static int getDeviceInfo(int *cameraFd, struct v4l2_buffer *infoBuf) {
+  infoBuf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  infoBuf->memory = V4L2_MEMORY_MMAP;
+  infoBuf->index = 0;
+  return xioctl(*cameraFd, VIDIOC_QUERYBUF, infoBuf);
+}
+
+static unsigned char* mapMemory(int *cameraFd, struct v4l2_buffer *buf) {
+  return (unsigned char*)mmap(NULL, buf->length, PROT_READ | PROT_WRITE, MAP_SHARED, *cameraFd, buf->m.offset);
+}
+
+static int selectFrame(int *cameraFd) {
   fd_set fds;
   FD_ZERO(&fds);
-  FD_SET(fd, &fds);
+  FD_SET(*cameraFd, &fds);
   struct timeval tv = {0};
-  tv.tv_sec = 5;
+  tv.tv_sec = 10;
+  return select((*cameraFd) + 1, &fds, NULL, NULL, &tv);
+}
 
-  if (select(fd + 1, &fds, NULL, NULL, &tv) == -1) {
-    perror("Selecting Frame");
-    munmap(buffer, buf.length);
-    close(fd);
-    exit(1);
+static int dequeueBuf(int *cameraFd, struct v4l2_buffer* buf) {
+  return xioctl(*cameraFd, VIDIOC_DQBUF, buf);
+}
+
+static int endStream(int *cameraFd) {
+  unsigned int streamType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  return xioctl(*cameraFd, VIDIOC_STREAMOFF, &streamType);
+}
+
+
+static BMPImg *captureFrame(size_t img_width, size_t img_height) {
+  int cameraFd = openCamera();
+  if (cameraFd == -1) {
+    exit(EXIT_FAILURE);
   }
 
-  if (xioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
-    perror("Dequeueing buff");
-    munmap(buffer, buf.length);
-    close(fd);
-    exit(1);
+  struct v4l2_format fmt = {0};
+  if (setFormat(&cameraFd, img_width, img_height, &fmt) == -1) {
+    close(cameraFd);
+    exit(EXIT_FAILURE);
   }
 
+  if (requestBuffer(&cameraFd) == -1) {
+    close(cameraFd);
+    exit(EXIT_FAILURE);
+  }
 
-  unsigned char *yuyv = buffer;
+  struct v4l2_buffer buf;
+  if (getDeviceInfo(&cameraFd, &buf) == -1) {
+    close(cameraFd);
+    exit(EXIT_FAILURE);
+  }
 
-  size_t fileSize = img_width * img_height * 3 + 54;
+  unsigned char *yuyv = mapMemory(&cameraFd, &buf);
+  if (yuyv == MAP_FAILED) {
+    close(cameraFd);
+    exit(EXIT_FAILURE);
+  }
 
-  unsigned char fileHeader[14] = {
-      'B', 'M',       // File type
-      0,   0,   0, 0, // Total file size in bytes
-      0,   0,         // Reserved
-      0,   0,         // Reserved
-      54,  0,   0, 0, // Offset to pixel data (54 bytes)
-  };
-  fileHeader[2] = (unsigned char)(fileSize);
-  fileHeader[3] = (unsigned char)(fileSize >> 8);
-  fileHeader[4] = (unsigned char)(fileSize >> 16);
-  fileHeader[5] = (unsigned char)(fileSize >> 24);
+  if (queueBuffer(&cameraFd) == -1) {
+    munmap(yuyv, buf.length);
+    close(cameraFd);
+    exit(EXIT_FAILURE);
+  }
+
+  if (startStream(&cameraFd) == -1) {
+    munmap(yuyv, buf.length);
+    close(cameraFd);
+    exit(EXIT_FAILURE);
+  }
+
+  if (selectFrame(&cameraFd) == -1) {
+    munmap(yuyv, buf.length);
+    close(cameraFd);
+    exit(EXIT_FAILURE);
+  }
+
+  if (dequeueBuf(&cameraFd, &buf) == -1) {
+    munmap(yuyv, buf.length);
+    close(cameraFd);
+    exit(EXIT_FAILURE);
+  }
+
+  if (endStream(&cameraFd) == -1) {
+    munmap(yuyv, buf.length);
+    close(cameraFd);
+    exit(EXIT_FAILURE);
+  }
+
 
   unsigned char infoHeader[40] = {
       40, 0, 0, 0, // Header size
@@ -159,17 +177,16 @@ void captureFrame(size_t img_width, size_t img_height) {
   infoHeader[22] = (unsigned char)(imageSize >> 16);
   infoHeader[23] = (unsigned char)(imageSize >> 24);
 
-  FILE *f = fopen("output/output.bmp", "wb");
-  if (!f) {
-    free(yuyv);
-    exit(EXIT_FAILURE);
-  }
+  BMPImg *image = malloc(sizeof(BMPImg));
 
-  fwrite(fileHeader, 1, 14, f);
-  fwrite(infoHeader, 1, 40, f);
+  memcpy(image->header, infoHeader, sizeof(infoHeader));
 
-  unsigned char padding[3] = {0, 0, 0};
-  size_t paddingSize = (4 - (img_width * 3) % 4) % 4;
+  image->width = img_width;
+  image->height = img_height;
+
+  size_t dataSize = img_width * img_height * 3;
+  size_t size = 0;
+  image->data = malloc(dataSize);
 
   for (size_t i = 0; i < header_height; ++i) {
     size_t stride = fmt.fmt.pix.bytesperline;
@@ -202,16 +219,44 @@ void captureFrame(size_t img_width, size_t img_height) {
 
       // Write the first pixel (BGR)
       unsigned char pixel0[3] = {B0, G0, R0};
-      fwrite(pixel0, 1, 3, f);
+      image->data[size++] = pixel0[0];
+      image->data[size++] = pixel0[1];
+      image->data[size++] = pixel0[2];
 
       // Write the second pixel (BGR)
       unsigned char pixel1[3] = {B1, G1, R1};
-      fwrite(pixel1, 1, 3, f);
+      image->data[size++] = pixel1[0];
+      image->data[size++] = pixel1[1];
+      image->data[size++] = pixel1[2];
     }
-    fwrite(padding, 1, paddingSize, f);
   }
 
-  fclose(f);
-  munmap(buffer, buf.length);
-  close(fd);
+
+  close(cameraFd);
+  munmap(yuyv, buf.length);
+  return image;
+}
+
+void startCamera(size_t imageWidth, size_t imageHeight, size_t frameWidth, size_t frameHeight) {
+  int startY, startX, rows, cols;
+  getmaxyx(stdscr, rows, cols);
+
+  startY = rows / 2 - frameHeight / 2;
+  startX = cols / 2 - frameWidth / 2;
+
+  WINDOW *img_frame = newwin(frameHeight, frameWidth, startY, startX);
+  int ch;
+  while ((ch = getch()) != 'q') {
+    BMPImg *img = captureFrame(imageWidth, imageHeight);
+    renderASCII(img_frame, img, frameWidth, frameHeight);
+    wrefresh(img_frame);
+    wclear(img_frame);
+    napms(100);
+    free(img->data);
+    free(img);
+  }
+
+
+  delwin(img_frame);
+  endwin();
 }

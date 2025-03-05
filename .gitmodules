@@ -1,6 +1,0 @@
-[submodule "vendor/libjpeg"]
-	path = vendor/libjpeg
-	url = https://github.com/winlibs/libjpeg
-[submodule "vendor/libjpeg-turbo"]
-	path = vendor/libjpeg-turbo
-	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git

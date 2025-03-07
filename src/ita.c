@@ -54,7 +54,7 @@ static int getBlockBrightness(BMPImg *img, int startX, int startY, int blockWidt
 }
 
 static char brightnessToASCII(int brightness) {
-  const char asciiChars[10] = "@%#*+=-:.,";
-  int index = (brightness * (sizeof(asciiChars) - 1)) / 255;
-  return asciiChars[9 - index];
+  const char asciiChars[] = "@$#&%WXH8Oo*+=~-:. "; // High contrast, reduced mid-tones
+  int index = (brightness * (sizeof(asciiChars) - 2)) / 255;
+  return asciiChars[sizeof(asciiChars) - 2 - index];
 }

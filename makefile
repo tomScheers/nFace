@@ -1,10 +1,14 @@
 PROGRAM = nface
+
 CC := gcc
 CFLAGS := -Wall -Wextra -Iinclude -g -O3
 LDFLAGS := -lncurses
+
 SRC := $(wildcard src/*.c)
 OBJ := $(patsubst src/%.c, build/%.o, $(SRC))
 BIN := bin/$(PROGRAM)
+
+.PHONY: all clean install uninstall compile_commands.json
 
 all: $(BIN) compile_commands.json
 
@@ -25,3 +29,11 @@ compile_commands.json: clean
 
 clean:
 	rm -rf build bin compile_commands.json
+
+# Install the binary to /usr/local/bin with proper permissions
+install: $(BIN)
+	install -Dm755 $(BIN) /usr/local/bin/$(PROGRAM)
+
+# Uninstall the binary from /usr/local/bin
+uninstall:
+	rm -f /usr/local/bin/$(PROGRAM)

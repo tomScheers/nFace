@@ -1,2 +1,2 @@
 # nFace
-Basic facetime application through the terminal and ASCII art
+A camera application run through your terminal powered by ASCII art.

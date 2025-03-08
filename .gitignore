@@ -3,4 +3,3 @@ bin/
 test/
 output/
 .cache/
-compile_commands.json

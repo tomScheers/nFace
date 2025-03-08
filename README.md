@@ -1,8 +1,7 @@
 # nFace
 nFace is a terminal-based camera application that converts your live camera feed into ASCII art in real-time using ncurses. 
 
-This is one of my favorite projects I've ever created, so try it out and have some fun with it!
-
+![Video Preview](assets/example.gif)
 ## Requirements
 - Linux (for v4l2)
 - A camera (obviously)

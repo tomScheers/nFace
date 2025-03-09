@@ -115,7 +115,7 @@ static int dequeueBuf(const int cameraFd, const struct v4l2_buffer *buf);
 static int endStream(const int cameraFd);
 static unsigned char *getImageHeader(const size_t imageWidth,
                                      const size_t imageHeight);
-static int writeImageData(BMPImg *image, const unsigned char *yuyvData,
+static int writeImageData(BMPImage *image, const unsigned char *yuyvData,
                           const size_t dataSize, const size_t stride);
 
 void startCamera(const size_t imageWidth, const size_t imageHeight) {
@@ -192,10 +192,10 @@ void startCamera(const size_t imageWidth, const size_t imageHeight) {
       exit(EXIT_FAILURE);
     }
 
-    BMPImg *image = malloc(sizeof(BMPImg));
+    BMPImage *image = malloc(sizeof(BMPImage));
 
     unsigned char *infoHeader = getImageHeader(imageWidth, imageHeight);
-    memcpy(image->header, infoHeader, 54);
+    memcpy(&image->header, infoHeader, sizeof(*infoHeader));
 
     image->width = imageWidth;
     image->height = imageHeight;
@@ -236,8 +236,6 @@ static WINDOW *createWindow(const size_t imageWidth, const size_t imageHeight) {
     rows = imageHeight;
   }
 
-  int factor = (cols < rows) ? cols : rows;
-  fprintf(stdout, "factor: %d\n", factor);
   float ratio = (float)imageWidth / (float)imageHeight;
   float blockWidthToHeightRatio =
       2.0; // The ratio of a chars width in the terminal to it's height
@@ -362,13 +360,13 @@ static unsigned char *getImageHeader(const size_t imageWidth,
   return infoHeader;
 }
 
-static int writeImageData(BMPImg *image, const unsigned char *yuyvData,
+static int writeImageData(BMPImage *image, const unsigned char *yuyvData,
                           const size_t dataSize, const size_t stride) {
   size_t size = 0;
   image->data = malloc(dataSize);
 
   for (size_t i = 0; i < (size_t)image->height; ++i) {
-    unsigned char *row =
+    const unsigned char *row =
         yuyvData + stride * (image->height - i - 1); // Adjust row pointer
     for (size_t j = 0; j < (size_t)image->width / 2; ++j) {
       int Y0 = row[j * 4 + 0];      // Y0

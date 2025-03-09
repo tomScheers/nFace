@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int getBlockBrightness(BMPImg *img, int startX, int startY, int blockWidth, int blockHeight);
+static int getBlockBrightness(BMPImage *img, int startX, int startY, int blockWidth, int blockHeight);
 static char brightnessToASCII(int brightness);
 
-void renderASCII(WINDOW *win, BMPImg *img, int ASCIIWidth, int ASCIIHeight) {
+void renderASCII(WINDOW *win, BMPImage *img, int ASCIIWidth, int ASCIIHeight) {
   int blockWidth = img->width / ASCIIWidth;
   int blockHeight = img->height / ASCIIHeight;
 
@@ -27,7 +27,7 @@ void renderASCII(WINDOW *win, BMPImg *img, int ASCIIWidth, int ASCIIHeight) {
   }
 }
 
-static int getBlockBrightness(BMPImg *img, int startX, int startY, int blockWidth,
+static int getBlockBrightness(BMPImage *img, int startX, int startY, int blockWidth,
                        int blockHeight) {
   int totalBrightness = 0;
   size_t count = 0;

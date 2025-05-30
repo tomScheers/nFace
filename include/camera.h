@@ -33,8 +33,7 @@ int openCamera();
 int setFormat(const int cameraFd, const size_t imageWidth,
                      const size_t imageHeight, struct v4l2_format *p_fmt);
 
-/*
- * @brief Request a camera buffer
+/* @brief Request a camera buffer
  *
  * @details Request a buffer with data the camera captured
  *

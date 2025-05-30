@@ -4,7 +4,7 @@ CC := gcc
 CFLAGS := -Wall -Wextra -Iinclude -g -O3
 LDFLAGS := -lncurses
 
-SRC := $(wildcard src/*.c)
+SRC := $(shell find src -name '*.c')
 OBJ := $(patsubst src/%.c, build/%.o, $(SRC))
 BIN := bin/$(PROGRAM)
 
@@ -13,7 +13,8 @@ BIN := bin/$(PROGRAM)
 $(BIN): $(OBJ) | bin
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-build/%.o: src/%.c | build
+build/%.o: src/%.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build:

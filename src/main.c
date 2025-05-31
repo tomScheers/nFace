@@ -3,15 +3,15 @@
 #include <fcntl.h>
 #include <memory.h>
 #include <ncurses.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #define PROJECT_VERSION "1.0.0"
 
 static void init_ncurses();
-WINDOW *createWindow(const size_t imageWidth, const size_t imageHeight);
+WINDOW *createWindow(size_t imageWidth, size_t imageHeight);
 
 int main(int argc, char *argv[]) {
   for (int i = 1; i < argc; i++) {
@@ -149,26 +149,19 @@ static void init_ncurses() {
   nodelay(stdscr, TRUE);
 }
 
-WINDOW *createWindow(const size_t imageWidth, const size_t imageHeight) {
-  int startY, startX, rows, cols;
-  getmaxyx(stdscr, rows, cols);
+WINDOW *createWindow(size_t imageWidth, size_t imageHeight) {
+  int termRows, termCols;
+  getmaxyx(stdscr, termRows, termCols);
 
-  if ((int)imageWidth < cols) {
-    cols = imageWidth;
-  }
-  if ((int)imageHeight < rows) {
-    rows = imageHeight;
-  }
+  size_t scaledImageHeight = imageHeight / 2.1;
 
-  float ratio = (float)imageWidth / (float)imageHeight;
-  float blockWidthToHeightRatio =
-      2.0; // The ratio of a chars width in the terminal to it's height
-  size_t frameHeight = rows;
-  size_t frameWidth =
-      (size_t)((frameHeight * ratio + 0.5) * blockWidthToHeightRatio);
+  int frameWidth = (imageWidth <= termCols) ? imageWidth : termCols;
+  int frameHeight =
+      (scaledImageHeight <= termRows) ? scaledImageHeight : termRows;
 
-  startY = rows / 2 - frameHeight / 2;
-  startX = cols / 2 - frameWidth / 2;
+  // Centering calculations
+  int startY = (termRows - frameHeight) / 2;
+  int startX = (termCols - frameWidth) / 2;
 
   return newwin(frameHeight, frameWidth, startY, startX);
 }

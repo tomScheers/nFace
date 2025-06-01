@@ -36,5 +36,4 @@ Or, if you have installed it to your system, just run
 nface
 ```
 ### N.B.
-- If your terminal is either too small or to large, you won't see anything, so make sure it's the right size (only important for extremes).
 - You can change the resolution of the camera by increasing/decreasing your terminal size using tmux, because this program is responsive

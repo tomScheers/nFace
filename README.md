@@ -26,6 +26,12 @@ To run the program, you'll need to run
 sudo make install
 ```
 
+### For nix users
+You can install all necessary dependencies via a development shell
+```bash
+nix develop
+```
+
 ## Usage
 You can run the project by executing the binary
 ```bash

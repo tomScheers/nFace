@@ -26,5 +26,31 @@
           echo "You can now run 'make' to build the project."
         '';
       };
+      # Buildable and runnable package
+      packages.nface = pkgs.stdenv.mkDerivation {
+        pname = "nface";
+        version = "unstable";
+
+        src = ./.;
+
+        nativeBuildInputs = with pkgs; [pkg-config];
+        buildInputs = with pkgs; [gcc ncurses libv4l];
+
+        buildPhase = "make";
+        installPhase = ''
+          mkdir -p $out/bin
+          cp bin/nface $out/bin/
+        '';
+
+        meta = {
+          description = "Terminal-based face tracking using v4l2";
+          license = pkgs.lib.licenses.gpl3Plus;
+          maintainers = with pkgs.lib.maintainers; [];
+          platforms = pkgs.lib.platforms.linux;
+        };
+      };
+
+      # Default package (for `nix run`)
+      packages.default = self.packages.${system}.nface;
     });
 }

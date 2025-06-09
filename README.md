@@ -63,7 +63,7 @@ nface
 You can run the program without any prior installations with nix
 
 ```bash
-nix run github:hafflationist/nFace#default
+nix run github:tomScheers/nFace#default
 ```
 
 ### N.B.

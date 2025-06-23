@@ -152,16 +152,18 @@ static void init_ncurses() {
 WINDOW *createWindow(size_t imageWidth, size_t imageHeight) {
   int termRows, termCols;
   getmaxyx(stdscr, termRows, termCols);
+  size_t stTermRows = (size_t)termRows;
+  size_t stTermCols = (size_t)termCols;
 
   size_t scaledImageHeight = imageHeight / 2.1;
 
-  int frameWidth = (imageWidth <= termCols) ? imageWidth : termCols;
+  int frameWidth = (imageWidth <= stTermCols) ? imageWidth : stTermCols;
   int frameHeight =
-      (scaledImageHeight <= termRows) ? scaledImageHeight : termRows;
+      (scaledImageHeight <= stTermRows) ? scaledImageHeight : stTermRows;
 
   // Centering calculations
-  int startY = (termRows - frameHeight) / 2;
-  int startX = (termCols - frameWidth) / 2;
+  int startY = (stTermRows - frameHeight) / 2;
+  int startX = (stTermCols - frameWidth) / 2;
 
   return newwin(frameHeight, frameWidth, startY, startX);
 }

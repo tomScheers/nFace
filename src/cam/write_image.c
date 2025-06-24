@@ -6,6 +6,8 @@ void writeImageData(BMPImage *image, const unsigned char *yuyvData,
                           const size_t dataSize, const size_t stride) {
   size_t size = 0;
   image->data = malloc(dataSize);
+  if (image->data == NULL)
+    return;
 
   for (size_t i = 0; i < (size_t)image->height; ++i) {
     const unsigned char *row =

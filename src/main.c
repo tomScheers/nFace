@@ -8,25 +8,31 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#define PROJECT_VERSION "1.0.0"
+#define PROJECT_VERSION "1.0.1"
+#define HEIGHT_WIDTH_RATIO 2.1
 
 static void init_ncurses();
 WINDOW *createWindow(size_t imageWidth, size_t imageHeight);
+static int
+xstreq(const char *str1,
+       const char *str2); // Helper function, checks if two strs are equal
 
 int main(int argc, char *argv[]) {
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
-      printf("nFace version: %s\n", PROJECT_VERSION);
-      return EXIT_SUCCESS;
-    }
-    if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-      printf("Usage: nface [OPTION]\n");
-      printf("A simple camera interface through the terminal\n\n");
-      printf("Options:\n");
-      printf("  -h, --help    Display this help message and exit.\n");
-      printf("  -v, --version   Show version information and exit.\n");
-      return EXIT_SUCCESS;
-    }
+  if (argc > 2) {
+    printf("Usage: nface [--help|-h]|[--version|-v]\n");
+    return EXIT_FAILURE;
+  }
+  if (xstreq(argv[argc - 1], "--version") || xstreq(argv[argc - 1], "-v")) {
+    printf("nFace version: %s\n", PROJECT_VERSION);
+    return EXIT_SUCCESS;
+  }
+  if (xstreq(argv[argc - 1], "--help") || xstreq(argv[argc - 1], "-h")) {
+    printf("Usage: nface [OPTION]\n");
+    printf("A simple camera interface through the terminal\n\n");
+    printf("Options:\n");
+    printf("  -h, --help    Display this help message and exit.\n");
+    printf("  -v, --version   Show version information and exit.\n");
+    return EXIT_SUCCESS;
   }
   size_t imageWidth = 640, imageHeight = 360;
 
@@ -36,41 +42,36 @@ int main(int argc, char *argv[]) {
   int cameraFd = openCamera();
   if (cameraFd == -1) {
     perror("Opening camera");
-    return EXIT_FAILURE;
+    goto error;
   }
 
   struct v4l2_format fmt = {0};
   if (setFormat(cameraFd, imageWidth, imageHeight, &fmt) == -1) {
     perror("Setting format");
-    close(cameraFd);
-    return EXIT_FAILURE;
+    goto error;
   }
 
   if (requestBuffer(cameraFd) == -1) {
     perror("Requesting buffer");
-    close(cameraFd);
-    return EXIT_FAILURE;
+    goto error;
   }
 
   struct v4l2_buffer buf;
   if (getDeviceInfo(cameraFd, &buf) == -1) {
     perror("Fetching device info");
-    close(cameraFd);
-    return EXIT_FAILURE;
+    goto error;
   }
 
   unsigned char *yuyv = mapMemory(cameraFd, &buf);
   if (yuyv == MAP_FAILED) {
     perror("Mapping memory");
-    close(cameraFd);
-    return EXIT_FAILURE;
+    goto error;
   }
 
   if (startStream(cameraFd) == -1) {
     perror("Start streaming");
     munmap(yuyv, buf.length);
-    close(cameraFd);
-    return EXIT_FAILURE;
+    goto error;
   }
 
   size_t frameWidth, frameHeight;
@@ -80,32 +81,35 @@ int main(int argc, char *argv[]) {
     yuyv = mapMemory(cameraFd, &buf);
     if (yuyv == MAP_FAILED) {
       perror("Mapping memory");
-      close(cameraFd);
-      return EXIT_FAILURE;
+      goto error;
     }
 
     if (queueBuffer(cameraFd) == -1) {
       perror("Queueing buffer");
       munmap(yuyv, buf.length);
-      close(cameraFd);
-      return EXIT_FAILURE;
+      goto error;
     }
 
     if (selectFrame(cameraFd) == -1) {
       perror("Selecting frame");
       munmap(yuyv, buf.length);
-      close(cameraFd);
-      return EXIT_FAILURE;
+      goto error;
     }
 
     if (dequeueBuf(cameraFd, &buf) == -1) {
       perror("Dequeueing buffer");
       munmap(yuyv, buf.length);
-      close(cameraFd);
-      return EXIT_FAILURE;
+      goto error;
     }
 
-    BMPImage *image = malloc(sizeof(BMPImage));
+    BMPImage *image = calloc(1, sizeof(BMPImage));
+    if (image == NULL) {
+      perror("malloc");
+      munmap(yuyv, buf.length);
+      free(image->data);
+      free(image);
+      goto error;
+    }
 
     unsigned char *infoHeader = getImageHeader(imageWidth, imageHeight);
     memcpy(&image->header, infoHeader, sizeof(*infoHeader));
@@ -117,11 +121,21 @@ int main(int argc, char *argv[]) {
 
     writeImageData(image, yuyv, dataSize, fmt.fmt.pix.bytesperline);
 
+    if (image->data == NULL) {
+      perror("malloc");
+      munmap(yuyv, buf.length);
+      free(image);
+      free(infoHeader);
+      goto error;
+    }
+
     werase(imageFrame);
 
     renderASCII(imageFrame, image, frameWidth, frameHeight);
-    munmap(yuyv, buf.length);
+
     wrefresh(imageFrame);
+
+    munmap(yuyv, buf.length);
     free(infoHeader);
     free(image->data);
     free(image);
@@ -130,14 +144,24 @@ int main(int argc, char *argv[]) {
   if (endStream(cameraFd) == -1) {
     perror("Ending stream");
     close(cameraFd);
+    delwin(imageFrame);
+    endwin();
     return EXIT_FAILURE;
   }
 
   close(cameraFd);
   delwin(imageFrame);
   endwin();
+  return EXIT_SUCCESS;
 
-  return 0;
+error:
+  if (endStream(cameraFd) == -1)
+    perror("Ending stream");
+
+  close(cameraFd);
+  delwin(imageFrame);
+  endwin();
+  return EXIT_FAILURE;
 }
 
 static void init_ncurses() {
@@ -147,6 +171,9 @@ static void init_ncurses() {
   curs_set(0);
   keypad(stdscr, TRUE);
   nodelay(stdscr, TRUE);
+  start_color();
+  init_pair(1, COLOR_WHITE, COLOR_BLACK);
+  bkgd(COLOR_PAIR(1));
 }
 
 WINDOW *createWindow(size_t imageWidth, size_t imageHeight) {
@@ -155,7 +182,7 @@ WINDOW *createWindow(size_t imageWidth, size_t imageHeight) {
   size_t stTermRows = (size_t)termRows;
   size_t stTermCols = (size_t)termCols;
 
-  size_t scaledImageHeight = imageHeight / 2.1;
+  size_t scaledImageHeight = imageHeight / HEIGHT_WIDTH_RATIO;
 
   int frameWidth = (imageWidth <= stTermCols) ? imageWidth : stTermCols;
   int frameHeight =
@@ -166,4 +193,8 @@ WINDOW *createWindow(size_t imageWidth, size_t imageHeight) {
   int startX = (stTermCols - frameWidth) / 2;
 
   return newwin(frameHeight, frameWidth, startY, startX);
+}
+
+static int xstreq(const char *str1, const char *str2) {
+  return strcmp(str1, str2) == 0;
 }

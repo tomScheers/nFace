@@ -30,10 +30,10 @@ void renderASCII(WINDOW *win, BMPImage *img, int ASCIIWidth, int ASCIIHeight) {
 
 static int getBlockBrightness(BMPImage *img, int startX, int startY,
                               int blockWidth, int blockHeight) {
-  int totalBrightness = 0;
+  float totalBrightness = 0;
   size_t count = 0;
 
-  size_t blockIncrement = 1; // The higher the value, the more efficient the
+  size_t blockIncrement = 4; // The higher the value, the more efficient the
                              // program, but the less accurate the image is
 
   for (int y = startY; y < startY + blockHeight; y += blockIncrement) {
@@ -43,7 +43,7 @@ static int getBlockBrightness(BMPImage *img, int startX, int startY,
       unsigned char g = img->data[index + 1];
       unsigned char r = img->data[index + 2];
 
-      int brightness = (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+      float brightness = (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
       totalBrightness += brightness;
       ++count;
     }
@@ -52,12 +52,12 @@ static int getBlockBrightness(BMPImage *img, int startX, int startY,
   if (count == 0)
     return 0;
 
-  return totalBrightness / count;
+  return (int)totalBrightness / count;
 }
 
 static char brightnessToASCII(int brightness) {
   static const char asciiChars[] =
       "@$#&%WXH8Oo*+=~-:. "; // High contrast, reduced mid-tones
-  int index = (brightness * (sizeof(asciiChars) - 2)) / 255;
+  size_t index = (brightness * (sizeof(asciiChars) - 2)) / 255;
   return asciiChars[sizeof(asciiChars) - 2 - index];
 }

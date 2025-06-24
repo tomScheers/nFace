@@ -56,7 +56,7 @@ static int getBlockBrightness(BMPImage *img, int startX, int startY,
 }
 
 static char brightnessToASCII(int brightness) {
-  const char asciiChars[] =
+  static const char asciiChars[] =
       "@$#&%WXH8Oo*+=~-:. "; // High contrast, reduced mid-tones
   int index = (brightness * (sizeof(asciiChars) - 2)) / 255;
   return asciiChars[sizeof(asciiChars) - 2 - index];

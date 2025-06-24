@@ -23,6 +23,9 @@ build:
 bin:
 	mkdir -p bin
 
+clean:
+	rm -rf bin build
+
 # Install the binary to /usr/local/bin with proper permissions
 install: $(BIN)
 	install -Dm755 $(BIN) /usr/local/bin/$(PROGRAM)

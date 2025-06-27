@@ -25,13 +25,13 @@ int main(int argc, char *argv[]) {
   for (int i = 1; i < argc; i += 2) {
     if (xstreq(argv[i], "-w") || xstreq(argv[i], "--width")) {
       if (argc <= i + 1) {
-        printf("The %s paramater requires an integer argument to be passed in.\n", argv[i]);
+        printf("The %s flag requires an integer argument to be passed in.\n", argv[i]);
         return EXIT_FAILURE;
       }
       frameWidth = (size_t)atoi(argv[i + 1]) - 1;
     } else if (xstreq(argv[i], "-h") || xstreq(argv[i], "--height")) {
       if (argc <= i + 1) {
-        printf("The %s paramater requires an integer argument to be passed in.\n", argv[i]);
+        printf("The %s flag requires an integer argument to be passed in.\n", argv[i]);
         return EXIT_FAILURE;
       }
       frameHeight = (size_t)atoi(argv[i + 1]) - 1;

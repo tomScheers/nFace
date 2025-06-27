@@ -67,6 +67,17 @@ You can run the program without any prior installations with nix
 nix run github:tomScheers/nFace#default
 ```
 
+
+## Options
+| Flag         | Description                  |
+|--------------|------------------------------|
+| `--help` | Show help message            |
+| `-v`, `--version` | Show current program version     |
+| `-w`, `--width` | Modify the width of the image frame           |
+| `-h`, `--height` | Modify the height of the image frame |
+
+
+
 ### N.B.
 
 - You can change the resolution of the camera by increasing/decreasing your

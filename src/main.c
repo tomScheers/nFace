@@ -11,6 +11,7 @@
 #define PROJECT_VERSION "1.0.1"
 #define HEIGHT_WIDTH_RATIO 2.1
 
+static void print_help();
 static void init_ncurses();
 WINDOW *createWindow(size_t imageWidth, size_t imageHeight);
 static int
@@ -18,23 +19,30 @@ xstreq(const char *str1,
        const char *str2); // Helper function, checks if two strs are equal
 
 int main(int argc, char *argv[]) {
-  if (argc > 2) {
-    printf("Usage: nface [--help|-h]|[--version|-v]\n");
-    return EXIT_FAILURE;
-  }
-  if (xstreq(argv[argc - 1], "--version") || xstreq(argv[argc - 1], "-v")) {
-    printf("nFace version: %s\n", PROJECT_VERSION);
-    return EXIT_SUCCESS;
-  }
-  if (xstreq(argv[argc - 1], "--help") || xstreq(argv[argc - 1], "-h")) {
-    printf("Usage: nface [OPTION]\n");
-    printf("A simple camera interface through the terminal\n\n");
-    printf("Options:\n");
-    printf("  -h, --help    Display this help message and exit.\n");
-    printf("  -v, --version   Show version information and exit.\n");
-    return EXIT_SUCCESS;
-  }
   size_t imageWidth = 640, imageHeight = 360;
+  size_t frameWidth = 0, frameHeight = 0;
+
+  for (int i = 1; i < argc; i += 2) {
+    if (xstreq(argv[i], "-w") || xstreq(argv[i], "--width")) {
+      if (argc <= i + 1) {
+        printf("The %s paramater requires an integer argument to be passed in.\n", argv[i]);
+        return EXIT_FAILURE;
+      }
+      frameWidth = (size_t)atoi(argv[i + 1]) - 1;
+    } else if (xstreq(argv[i], "-h") || xstreq(argv[i], "--height")) {
+      if (argc <= i + 1) {
+        printf("The %s paramater requires an integer argument to be passed in.\n", argv[i]);
+        return EXIT_FAILURE;
+      }
+      frameHeight = (size_t)atoi(argv[i + 1]) - 1;
+    } else if (xstreq(argv[i], "--version") || xstreq(argv[i], "-v")) {
+      printf("nFace version: %s\n", PROJECT_VERSION);
+      return EXIT_SUCCESS;
+    } else {
+      print_help();
+      return EXIT_SUCCESS;
+    }
+  }
 
   init_ncurses();
 
@@ -74,8 +82,14 @@ int main(int argc, char *argv[]) {
     goto error;
   }
 
-  size_t frameWidth, frameHeight;
-  getmaxyx(imageFrame, frameHeight, frameWidth);
+  size_t max_height, max_width;
+  getmaxyx(imageFrame, max_height, max_width);
+
+  if (frameHeight == 0 || frameHeight > max_height)
+    frameHeight = max_height;
+
+  if (frameWidth == 0 || frameWidth > max_width)
+    frameWidth = max_width;
 
   while (getch() != 'q') {
     yuyv = mapMemory(cameraFd, &buf);
@@ -197,4 +211,14 @@ WINDOW *createWindow(size_t imageWidth, size_t imageHeight) {
 
 static int xstreq(const char *str1, const char *str2) {
   return strcmp(str1, str2) == 0;
+}
+
+static void print_help() {
+  printf("Usage: nface [OPTION]\n");
+  printf("A simple camera interface through the terminal\n\n");
+  printf("Options:\n");
+  printf("  --help    Display this help message and exit.\n");
+  printf("  -v, --version   Show version information and exit.\n");
+  printf("  -w, --width Change the width of the camera frame.\n");
+  printf("  -h, --height  Change the height of the camera frame.\n");
 }

@@ -9,6 +9,11 @@ static int getBlockBrightness(BMPImage *img, int startX, int startY,
 static char brightnessToASCII(int brightness);
 
 void renderASCII(WINDOW *win, BMPImage *img, int ASCIIWidth, int ASCIIHeight) {
+  size_t max_height, max_width;
+  getmaxyx(win, max_height, max_width);
+  size_t y_offset = (max_height - ASCIIHeight) / 2;
+  size_t x_offset = (max_width - ASCIIWidth) / 2;
+
   int blockWidth = img->width / ASCIIWidth;
   int blockHeight = img->height / ASCIIHeight;
 
@@ -17,12 +22,12 @@ void renderASCII(WINDOW *win, BMPImage *img, int ASCIIWidth, int ASCIIHeight) {
   if (blockHeight == 0)
     blockHeight = 1;
 
-  for (int y = 0; y < ASCIIHeight; ++y) {
-    for (int x = 0; x < ASCIIWidth; ++x) {
+  for (int y = 0; y <= ASCIIHeight; ++y) {
+    for (int x = 0; x <= ASCIIWidth; ++x) {
       int brightness = getBlockBrightness(img, blockWidth * x, blockHeight * y,
                                           blockWidth, blockHeight);
 
-      mvwaddch(win, ASCIIHeight - y, ASCIIWidth - x,
+      mvwaddch(win, ASCIIHeight - y + y_offset, ASCIIWidth - x + x_offset,
                brightnessToASCII(brightness));
     }
   }

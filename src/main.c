@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #define PROJECT_VERSION "1.0.1"
-#define HEIGHT_WIDTH_RATIO 2.1
+#define HEIGHT_WIDTH_RATIO 2.1.1
 
 static void print_help();
 static void init_ncurses();

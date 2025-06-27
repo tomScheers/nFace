@@ -10,6 +10,7 @@ into ASCII art in real-time using ncurses.
 - Linux (for v4l2)
 - A camera (obviously)
 - gcc
+- gzip
 - ncurses library
 - tmux (optional but recommended)
 

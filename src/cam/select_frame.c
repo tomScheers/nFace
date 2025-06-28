@@ -1,6 +1,6 @@
 #include "camera.h"
 
-int selectFrame(const int cameraFd) {
+int select_frame(int cameraFd) {
   fd_set fds;
   FD_ZERO(&fds);
   FD_SET(cameraFd, &fds);

@@ -16,7 +16,7 @@ int xioctl(int fh, int request, void *arg);
  *
  * @return File decriptor for the camera device, or -1 on failure
  */
-int openCamera();
+int open_camera();
 
 /*
  * @brief Sets the format for the camera
@@ -24,23 +24,23 @@ int openCamera();
  * @details Sets the camera format to use YUYV, and what the image dimensions
  * should be
  *
- * @param cameraFd File descriptor of the camera
- * @param imageWidth The width of the image being captured
- * @param imageHeight The height of the image being captured
+ * @param camera_fd File descriptor of the camera
+ * @param image_width The width of the image being captured
+ * @param image_height The height of the image being captured
  * @param *p_fmt Format to set, this is used later in the code
  * @return -1 on failure
  */
-int setFormat(const int cameraFd, const size_t imageWidth,
-                     const size_t imageHeight, struct v4l2_format *p_fmt);
+int set_format(int camera_fd, size_t image_width,
+                     size_t image_height, struct v4l2_format *p_fmt);
 
 /* @brief Request a camera buffer
  *
  * @details Request a buffer with data the camera captured
  *
- * @param cameraFd File descriptor for the camera
+ * @param camera_fd File descriptor for the camera
  * @return -1 on failure
  */
-int requestBuffer(const int cameraFd);
+int request_buf(int camera_fd);
 
 /*
  * @brief Queues a buffer to the video device
@@ -48,21 +48,21 @@ int requestBuffer(const int cameraFd);
  * @details Places a previously requested and memory-mapped buffer into the
  * incoming queue to be filled with image data by the driver
  *
- * @param cameraFd File descriptor for camera
+ * @param camera_fd File descriptor for camera
  * @return -1 on failure
  */
-int queueBuffer(const int cameraFd);
+int queue_buf(int camera_fd);
 
 /*
  * @brief Starts video stream
  *
  * @details Start streaming video to the queued buffer
  *
- * @param cameraFd File descriptor for the camera
+ * @param camera_fd File descriptor for the camera
  * @return -1 on failure
  *
  */
-int startStream(const int cameraFd);
+int start_stream(int camera_fd);
 
 /*
  * @brief Queries buffer properties
@@ -70,11 +70,11 @@ int startStream(const int cameraFd);
  * @details Populates infoBuf with the offset, length and other metadata about
  * the buffer previously requested via VIDEOC_REQBUFS
  *
- * @param cameraFd File descriptor for the camera to get the information of
- * @param infoBuff Buffer to write the device information to
+ * @param camera_fd File descriptor for the camera to get the information of
+ * @param info_buf Buffer to write the device information to
  * @return -1 on failure
  */
-int getDeviceInfo(const int cameraFd, struct v4l2_buffer *infoBuf);
+int get_device_info(int camera_fd, struct v4l2_buffer *info_buf);
 
 /*
  * @brief Memory-maps a video capture buffer
@@ -83,12 +83,12 @@ int getDeviceInfo(const int cameraFd, struct v4l2_buffer *infoBuf);
  *
  * @important Make sure to call unmap on the mapped memory!
  *
- * @param cameraFd File descriptor for the camera device
+ * @param camera_fd File descriptor for the camera device
  * @param buf Buffer to map the memory to
  *
  * @return -1 on failure, 0 on success
  */
-unsigned char *mapMemory(const int cameraFd,
+unsigned char *map_memory(int camera_fd,
                                 const struct v4l2_buffer *buf);
 
 /*
@@ -96,10 +96,10 @@ unsigned char *mapMemory(const int cameraFd,
  *
  * @details Uses select() to block until the video device signal that a frame is available
  *
- * @param cameraFd File descriptor for the camera device
+ * @param camera_fd File descriptor for the camera device
  * @return -1 on failure
  */
-int selectFrame(const int cameraFd);
+int select_frame(int camera_fd);
 
 /*
  * @brief Dequeues buffer from the video device
@@ -107,28 +107,28 @@ int selectFrame(const int cameraFd);
  * @details Retrieves a filled buffer from the outgoing queue after a frame has
  * been captured
  *
- * @param cameraFd File descriptor for camera
+ * @param camera_fd File descriptor for camera
  * @return -1 on failure
  */
-int dequeueBuf(const int cameraFd, const struct v4l2_buffer *buf);
+int dequeue_buf(int camera_fd, struct v4l2_buffer *buf);
 
 /*
  * @brief ends video stream
  *
- * @param cameraFd File descriptor for camera
+ * @param camera_fd File descriptor for camera
  * @return -1 on failure
  */
-int endStream(const int cameraFd);
+int end_stream(int camera_fd);
 
 /*
  * @brief Generates a BITMAPINFOHEADER
  *
  * @details Constructs a 40-byte BMP info header with the given image width and height. This is part of the BMP file format
- * @param imageHeight Height of the image
- * @param imageWidth Width of the image
+ * @param image_height Height of the image
+ * @param image_width width of the image
  */
-unsigned char *getImageHeader(const size_t imageWidth,
-                                     const size_t imageHeight);
+unsigned char *get_image_header(size_t image_width,
+                                     size_t image_height);
 
 /*
  * @brief Converts YUYV image data to BGR format and stores it ina BMPImage
@@ -136,11 +136,11 @@ unsigned char *getImageHeader(const size_t imageWidth,
  * @details Take interleaved YUYV data, performs color conversion to BGR (as required by BMP), and writes it onto the BMPImage data field
  *
  * @param *image Pointer to the BMP image to write the data to
- * @param *yuyvData Actual image data to use, will be converted to BGR
- * @param dataSize Size in bytes of the yuyvData dataset
+ * @param *yuyv_data Actual image data to use, will be converted to BGR
+ * @param data_size Size in bytes of the yuyvData dataset
  * @param stride Bytes per line the camera has read
  */
-void writeImageData(BMPImage *image, const unsigned char *yuyvData,
-                          const size_t dataSize, const size_t stride);
+void write_image_data(BMP_image *image, const unsigned char *yuyv_data,
+                          size_t data_size, size_t stride);
 
 #endif

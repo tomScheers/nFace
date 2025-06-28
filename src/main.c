@@ -13,14 +13,15 @@
 
 static void print_help();
 static void init_ncurses();
-WINDOW *createWindow(size_t imageWidth, size_t imageHeight);
+WINDOW *create_window(size_t image_width, size_t image_height);
 static int
 xstreq(const char *str1,
        const char *str2); // Helper function, checks if two strs are equal
 
 int main(int argc, char *argv[]) {
-  size_t imageWidth = 640, imageHeight = 360;
-  size_t frameWidth = 0, frameHeight = 0;
+  size_t image_width = 640, image_height = 360;
+  size_t frame_width = 0, frame_height = 0;
+  size_t block_increment = 2; // Default for block increment
 
   for (int i = 1; i < argc; i += 2) {
     if (xstreq(argv[i], "-w") || xstreq(argv[i], "--width")) {
@@ -28,17 +29,24 @@ int main(int argc, char *argv[]) {
         printf("The %s flag requires an integer argument to be passed in.\n", argv[i]);
         return EXIT_FAILURE;
       }
-      frameWidth = (size_t)atoi(argv[i + 1]) - 1;
+      frame_width = (size_t)atoi(argv[i + 1]) - 1;
     } else if (xstreq(argv[i], "-h") || xstreq(argv[i], "--height")) {
       if (argc <= i + 1) {
         printf("The %s flag requires an integer argument to be passed in.\n", argv[i]);
         return EXIT_FAILURE;
       }
-      frameHeight = (size_t)atoi(argv[i + 1]) - 1;
+      frame_height = (size_t)atoi(argv[i + 1]) - 1;
     } else if (xstreq(argv[i], "--version") || xstreq(argv[i], "-v")) {
       printf("nFace version: %s\n", PROJECT_VERSION);
       return EXIT_SUCCESS;
-    } else {
+    } else if (xstreq(argv[i], "--increment") || xstreq(argv[i], "-i")) {
+      if (argc <= i + 1) {
+        printf("The %s flag requires an integer argument to be passed in.\n", argv[i]);
+        return EXIT_FAILURE;
+      }
+      block_increment = (size_t)atoi(argv[i + 1]);
+    }
+    else {
       print_help();
       return EXIT_SUCCESS;
     }
@@ -46,77 +54,77 @@ int main(int argc, char *argv[]) {
 
   init_ncurses();
 
-  WINDOW *imageFrame = createWindow(imageWidth, imageHeight);
-  int cameraFd = openCamera();
-  if (cameraFd == -1) {
+  WINDOW *image_frame = create_window(image_width, image_height);
+  int camera_fd = open_camera();
+  if (camera_fd == -1) {
     perror("Opening camera");
     goto error;
   }
 
   struct v4l2_format fmt = {0};
-  if (setFormat(cameraFd, imageWidth, imageHeight, &fmt) == -1) {
+  if (set_format(camera_fd, image_width, image_height, &fmt) == -1) {
     perror("Setting format");
     goto error;
   }
 
-  if (requestBuffer(cameraFd) == -1) {
+  if (request_buf(camera_fd) == -1) {
     perror("Requesting buffer");
     goto error;
   }
 
   struct v4l2_buffer buf;
-  if (getDeviceInfo(cameraFd, &buf) == -1) {
+  if (get_device_info(camera_fd, &buf) == -1) {
     perror("Fetching device info");
     goto error;
   }
 
-  unsigned char *yuyv = mapMemory(cameraFd, &buf);
+  unsigned char *yuyv = map_memory(camera_fd, &buf);
   if (yuyv == MAP_FAILED) {
     perror("Mapping memory");
     goto error;
   }
 
-  if (startStream(cameraFd) == -1) {
+  if (start_stream(camera_fd) == -1) {
     perror("Start streaming");
     munmap(yuyv, buf.length);
     goto error;
   }
 
   size_t max_height, max_width;
-  getmaxyx(imageFrame, max_height, max_width);
+  getmaxyx(image_frame, max_height, max_width);
 
-  if (frameHeight == 0 || frameHeight > max_height)
-    frameHeight = max_height;
+  if (frame_height == 0 || frame_height > max_height)
+    frame_height = max_height;
 
-  if (frameWidth == 0 || frameWidth > max_width)
-    frameWidth = max_width;
+  if (frame_width == 0 || frame_width > max_width)
+    frame_width = max_width;
 
   while (getch() != 'q') {
-    yuyv = mapMemory(cameraFd, &buf);
+    yuyv = map_memory(camera_fd, &buf);
     if (yuyv == MAP_FAILED) {
       perror("Mapping memory");
       goto error;
     }
 
-    if (queueBuffer(cameraFd) == -1) {
+    if (queue_buf(camera_fd) == -1) {
       perror("Queueing buffer");
       munmap(yuyv, buf.length);
       goto error;
     }
 
-    if (selectFrame(cameraFd) == -1) {
+    if (select_frame(camera_fd) == -1) {
       perror("Selecting frame");
       munmap(yuyv, buf.length);
       goto error;
     }
 
-    if (dequeueBuf(cameraFd, &buf) == -1) {
+    if (dequeue_buf(camera_fd, &buf) == -1) {
       perror("Dequeueing buffer");
       munmap(yuyv, buf.length);
       goto error;
     }
 
-    BMPImage *image = calloc(1, sizeof(BMPImage));
+    BMP_image *image = calloc(1, sizeof(BMP_image));
     if (image == NULL) {
       perror("malloc");
       munmap(yuyv, buf.length);
@@ -125,55 +133,55 @@ int main(int argc, char *argv[]) {
       goto error;
     }
 
-    unsigned char *infoHeader = getImageHeader(imageWidth, imageHeight);
-    memcpy(&image->header, infoHeader, sizeof(*infoHeader));
+    unsigned char *info_header = get_image_header(image_width, image_height);
+    memcpy(&image->header, info_header, sizeof(*info_header));
 
-    image->width = imageWidth;
-    image->height = imageHeight;
+    image->width = image_width;
+    image->height = image_height;
 
-    size_t dataSize = imageWidth * imageHeight * 3;
+    size_t dataSize = image_width * image_height * 3;
 
-    writeImageData(image, yuyv, dataSize, fmt.fmt.pix.bytesperline);
+    write_image_data(image, yuyv, dataSize, fmt.fmt.pix.bytesperline);
 
     if (image->data == NULL) {
       perror("malloc");
       munmap(yuyv, buf.length);
       free(image);
-      free(infoHeader);
+      free(info_header);
       goto error;
     }
 
-    werase(imageFrame);
+    werase(image_frame);
 
-    renderASCII(imageFrame, image, frameWidth, frameHeight);
+    render_ASCII(image_frame, image, frame_width, frame_height, block_increment);
 
-    wrefresh(imageFrame);
+    wrefresh(image_frame);
 
     munmap(yuyv, buf.length);
-    free(infoHeader);
+    free(info_header);
     free(image->data);
     free(image);
   }
 
-  if (endStream(cameraFd) == -1) {
+  if (end_stream(camera_fd) == -1) {
     perror("Ending stream");
-    close(cameraFd);
-    delwin(imageFrame);
+    close(camera_fd);
+    delwin(image_frame);
     endwin();
     return EXIT_FAILURE;
   }
 
-  close(cameraFd);
-  delwin(imageFrame);
+  close(camera_fd);
+  delwin(image_frame);
   endwin();
   return EXIT_SUCCESS;
 
 error:
-  if (endStream(cameraFd) == -1)
+  if (end_stream(camera_fd) == -1)
     perror("Ending stream");
 
-  close(cameraFd);
-  delwin(imageFrame);
+  close(camera_fd);
+  delwin(image_frame);
   endwin();
   return EXIT_FAILURE;
 }
@@ -190,23 +198,23 @@ static void init_ncurses() {
   bkgd(COLOR_PAIR(1));
 }
 
-WINDOW *createWindow(size_t imageWidth, size_t imageHeight) {
+WINDOW *create_window(size_t image_width, size_t image_height) {
   int termRows, termCols;
   getmaxyx(stdscr, termRows, termCols);
-  size_t stTermRows = (size_t)termRows;
-  size_t stTermCols = (size_t)termCols;
+  size_t st_term_rows = (size_t)termRows;
+  size_t st_term_cols = (size_t)termCols;
 
-  size_t scaledImageHeight = imageHeight / HEIGHT_WIDTH_RATIO;
+  size_t scaled_image_height = image_height / HEIGHT_WIDTH_RATIO;
 
-  int frameWidth = (imageWidth <= stTermCols) ? imageWidth : stTermCols;
-  int frameHeight =
-      (scaledImageHeight <= stTermRows) ? scaledImageHeight : stTermRows;
+  size_t frame_width = (image_width <= st_term_cols) ? image_width : st_term_cols;
+  size_t frame_height =
+      (scaled_image_height <= st_term_rows) ? scaled_image_height : st_term_rows;
 
   // Centering calculations
-  int startY = (stTermRows - frameHeight) / 2;
-  int startX = (stTermCols - frameWidth) / 2;
+  size_t start_y = (st_term_rows - frame_height) / 2;
+  size_t start_x = (st_term_cols - frame_width) / 2;
 
-  return newwin(frameHeight, frameWidth, startY, startX);
+  return newwin(frame_height, frame_width, start_y, start_x);
 }
 
 static int xstreq(const char *str1, const char *str2) {

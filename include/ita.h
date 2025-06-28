@@ -5,10 +5,10 @@
 
 typedef struct {
   unsigned char header[54];
-  int width, height;
+  size_t width, height;
   unsigned char *data;
-} BMPImage;
+} BMP_image;
 
-void renderASCII(WINDOW* win, BMPImage *img, int asciiWidth, int asciiHeight);
+void render_ASCII(WINDOW *win, BMP_image *img, size_t ASCII_width, size_t ASCII_height, size_t block_increment);
 
 #endif

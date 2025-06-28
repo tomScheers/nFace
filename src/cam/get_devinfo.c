@@ -1,6 +1,6 @@
 #include "camera.h"
 
-int getDeviceInfo(const int cameraFd, struct v4l2_buffer *infoBuf) {
+int get_device_info(int cameraFd, struct v4l2_buffer *infoBuf) {
   infoBuf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   infoBuf->memory = V4L2_MEMORY_MMAP;
   infoBuf->index = 0;

@@ -2,16 +2,16 @@
 
 #include <stdlib.h>
 
-void writeImageData(BMPImage *image, const unsigned char *yuyvData,
-                          const size_t dataSize, const size_t stride) {
+void write_image_data(BMP_image *image, const unsigned char *yuyv_data,
+                          size_t data_size, size_t stride) {
   size_t size = 0;
-  image->data = malloc(dataSize);
+  image->data = malloc(data_size);
   if (image->data == NULL)
     return;
 
   for (size_t i = 0; i < (size_t)image->height; ++i) {
     const unsigned char *row =
-        yuyvData + stride * (image->height - i - 1); // Adjust row pointer
+        yuyv_data + stride * (image->height - i - 1); // Adjust row pointer
     for (size_t j = 0; j < (size_t)image->width / 2; ++j) {
       int Y0 = row[j * 4 + 0];      // Y0
       int U = row[j * 4 + 1] - 128; // U0 (shared by two pixels)

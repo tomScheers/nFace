@@ -1,6 +1,6 @@
 #include "camera.h"
 
-int queueBuffer(const int cameraFd) {
+int queue_buf(int cameraFd) {
   struct v4l2_buffer buf = {0};
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   buf.memory = V4L2_MEMORY_MMAP;

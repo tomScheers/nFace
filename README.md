@@ -75,6 +75,7 @@ nix run github:tomScheers/nFace#default
 | `-v`, `--version` | Show current program version     |
 | `-w`, `--width` | Modify the width of the image frame           |
 | `-h`, `--height` | Modify the height of the image frame |
+| `-i`, `--increment`  | Modify the block increment, the higher the faster, but the less accurate the picture will be |
 
 
 

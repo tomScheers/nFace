@@ -38,7 +38,6 @@ static int get_block_brightness(BMP_image *img, size_t start_x, size_t start_y,
   float total_brightness = 0;
   size_t count = 0;
 
-
   for (size_t y = start_y; y < start_y + block_height; y += block_increment) {
     for (size_t x = start_x; x < start_x + block_width; x += block_increment) {
       int index = (y * img->width + x) * 3;

@@ -16,7 +16,7 @@ int xioctl(int fh, int request, void *arg);
  *
  * @return File decriptor for the camera device, or -1 on failure
  */
-int open_camera();
+int open_camera(void);
 
 /*
  * @brief Sets the format for the camera

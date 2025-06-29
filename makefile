@@ -8,6 +8,8 @@ SRC := $(shell find src -name '*.c')
 OBJ := $(patsubst src/%.c, build/%.o, $(SRC))
 BIN := bin/$(PROGRAM)
 
+VERSION := $(shell git describe --tags --abbrev=0)
+
 SRCMAN = man/
 MANPAGE = nface.1
 COMPMAN = nface.1.gz 
@@ -18,9 +20,17 @@ MANDIR = /usr/share/man/man1/
 $(BIN): $(OBJ) | bin
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-build/%.o: src/%.c
+build/%.o: src/%.c version.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+version.h:
+	echo '#ifndef VERSION_H' > include/version.h; \
+	echo '#define VERSION_H' >> include/version.h; \
+	echo '' >> include/version.h; \
+	echo '#define PROJECT_VERSION "'$$(git describe --tags --abbrev=0 2>/dev/null || echo dev)'"' >> include/version.h; \
+	echo '' >> include/version.h; \
+	echo '#endif // VERSION_H' >> include/version.h
 
 build:
 	mkdir -p build

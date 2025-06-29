@@ -4,3 +4,4 @@ test/
 output/
 .cache/
 compile_commands.json
+include/version.h

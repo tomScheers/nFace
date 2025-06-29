@@ -1,4 +1,5 @@
 #include "camera.h"
+#include "version.h"
 #include <assert.h>
 #include <fcntl.h>
 #include <memory.h>
@@ -8,7 +9,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#define PROJECT_VERSION "1.0.3"
 #define HEIGHT_WIDTH_RATIO 2.1
 
 static void print_help();

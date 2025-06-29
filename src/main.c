@@ -11,8 +11,8 @@
 #define PROJECT_VERSION "1.0.3"
 #define HEIGHT_WIDTH_RATIO 2.1
 
-static void print_help();
-static void init_ncurses();
+static void print_help(void);
+static void init_ncurses(void);
 WINDOW *create_window(size_t image_width, size_t image_height);
 static int
 xstreq(const char *str1,
@@ -186,7 +186,7 @@ error:
   return EXIT_FAILURE;
 }
 
-static void init_ncurses() {
+static void init_ncurses(void) {
   initscr();
   noecho();
   cbreak();
@@ -221,7 +221,7 @@ static int xstreq(const char *str1, const char *str2) {
   return strcmp(str1, str2) == 0;
 }
 
-static void print_help() {
+static void print_help(void) {
   printf("Usage: nface [OPTION]\n");
   printf("A simple camera interface through the terminal\n\n");
   printf("Options:\n");
